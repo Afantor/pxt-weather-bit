@@ -28,6 +28,10 @@ using namespace pxt;
 #endif
 
 namespace weatherbit {
+	volatile unsigned int *setdir = (unsigned int *) (0x50000000UL + 0x518);
+    volatile unsigned int *clrdir = (unsigned int *) (0x50000000UL + 0x51C);
+    volatile unsigned int *inp = (unsigned int *) (0x50000000UL + 0x510);
+    uint32_t mask = 1 << 20;
     MicroBitPin P12 = uBit.io.P12;
     MicroBitPin P13 = uBit.io.P13;
 
@@ -36,7 +40,9 @@ namespace weatherbit {
         for (volatile uint16_t i = 0; i < 600; i++);
         P12.setDigitalValue(1);
         for (volatile uint8_t i = 0; i < 30; i++);
-        int b = P13.getDigitalValue();
+        //int b = P13.getDigitalValue();
+        *clrdir = mask;
+        uint8_t b = (*inp) & mask;
         for (volatile uint16_t i = 0; i < 600; i++);
         return b;
     }
@@ -98,7 +104,9 @@ namespace weatherbit {
         P12.setDigitalValue(0);
         P12.setDigitalValue(1);
         for (i = 1; i < 20; i++);
-        int b = P13.getDigitalValue();
+        //int b = P13.getDigitalValue();
+        *clrdir = mask;
+        uint8_t b = (*inp) & mask;
         for (i = 1; i < 60; i++);
         return b;
     }

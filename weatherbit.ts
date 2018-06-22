@@ -85,7 +85,168 @@ namespace weatherbit {
     const e6Reg = 0xE6
     const digH6 = 0xE7
 
+    export enum Servos {
+        S1 = 0x01,
+        S2 = 0x02
+    }
+
+    export enum Motors {
+        M1 = 0x1,
+        M2 = 0x2
+    }
+
+    export enum tMode {
+        Mode0 = 0x1,
+        Mode1 = 0x2
+    }
+    let initialized = false
+    let initializedMotor = false
+    //let neoStrip: neopixel.Strip;
+    let distanceBuf = 0;
+
+    function i2cwrite(addr: number, reg: number, value: number) {
+        let buf = pins.createBuffer(2)
+        buf[0] = reg
+        buf[1] = value
+        pins.i2cWriteBuffer(addr, buf)
+    }
+
+    function i2ccmd(addr: number, value: number) {
+        let buf = pins.createBuffer(1)
+        buf[0] = value
+        pins.i2cWriteBuffer(addr, buf)
+    }
+
+    function i2cread(addr: number, reg: number) {
+        pins.i2cWriteNumber(addr, reg, NumberFormat.UInt8BE);
+        let val = pins.i2cReadNumber(addr, NumberFormat.UInt8BE);
+        return val;
+    }
+
+    function initMotorFreq(): void {
+        pins.analogSetPeriod(AnalogPin.P13, 1000);
+        pins.analogSetPeriod(AnalogPin.P14, 1000);
+        pins.analogSetPeriod(AnalogPin.P15, 1000);
+        pins.analogSetPeriod(AnalogPin.P16, 1000);
+        initializedMotor = true
+    }
+
     // Functions for interfacing with the Weather Meters
+    /**
+     * get mic analog value.
+     */
+    //% blockId="robotbit_mic" block="Volume"
+    //% weight=5
+    export function getMicValue(): number {
+        let value = 0;
+        value = pins.analogReadPin(AnalogPin.P2);
+
+        return value;
+    }
+
+    /**
+     * Servo Execute
+     * @param index Servo Channel; eg: Servo1
+     * @param degree [0-180] degree of servo; eg: 0, 90, 180
+    */
+    //% blockId=robotbit_servo block="Servo|%index|degree %degree"
+    //% weight=22
+    //% blockGap=50
+    //% degree.min=0 degree.max=180
+    //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    export function Servo(index: Servos, degree: number): void {
+        if (degree >= 180) {
+            degree = 180
+        }
+        if (degree <= 0) {
+            degree = 0
+        }
+        if (index > 2 || index <= 0)
+            return
+        if (index == 1) {
+            pins.servoWritePin(AnalogPin.P12, degree)
+        }
+        if (index == 2) {
+            pins.servoWritePin(AnalogPin.P1, degree)
+        }
+    }
+
+    //% blockId=robotbit_motor_speed block="Motor|%index|runSpeed %speed"
+    //% weight=22
+    //% speed.min=-255 speed.max=255
+    //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    export function MotorRunSpeed(index: Motors, speed: number): void {
+        if (!initializedMotor) {
+            initMotorFreq()
+        }
+        speed = speed * 4; // map 255 to 512
+        if (speed >= 1024) {
+            speed = 1023
+        }
+        if (speed <= -1024) {
+            speed = -1023
+        }
+        if (index > 2 || index <= 0)
+            return
+        if (index == 1) {
+            if (speed >= 0) {
+                pins.analogWritePin(AnalogPin.P13, speed);
+                pins.digitalWritePin(DigitalPin.P14, 0);
+            } else {
+                pins.digitalWritePin(DigitalPin.P13, 0);
+                pins.analogWritePin(AnalogPin.P14, -speed);
+            }
+        }
+        if (index == 2) {
+            if (speed >= 0) {
+                pins.analogWritePin(AnalogPin.P15, speed);
+                pins.digitalWritePin(DigitalPin.P16, 0);
+            } else {
+                pins.digitalWritePin(DigitalPin.P15, 0);
+                pins.analogWritePin(AnalogPin.P16, -speed);
+            }
+        }
+    }
+
+    //% blockId=robotbit_stop block="Motor Stop|%index|"
+    //% weight=22
+    export function MotorStop(index: Motors): void {
+        MotorRunSpeed(index, 0);
+    }
+
+    //% blockId=robotbit_stop_all block="Motor Stop All"
+    //% weight=22
+    //% blockGap=50
+    export function MotorStopAll(): void {
+        for (let idx = 1; idx <= 2; idx++) {
+            MotorRunSpeed(idx, 0);
+        }
+    }
+
+    //% blockId=robotbit_ultrasonic block="Ultrasonic|pin %pin"
+    //% weight=5
+    export function Ultrasonic(pin: DigitalPin): number {
+
+        // send pulse
+        pins.setPull(pin, PinPullMode.PullNone);
+        pins.digitalWritePin(pin, 0);
+        control.waitMicros(2);
+        pins.digitalWritePin(pin, 1);
+        control.waitMicros(10);
+        pins.digitalWritePin(pin, 0);
+
+        // read pulse
+        let d = pins.pulseIn(pin, PulseValue.High, 25000);
+        let ret = d;
+        // serial.writeValue("ret", ret)
+        // serial.writeValue("d", ret*10/6/58)
+        // filter timeout spikes
+        if (ret == 0 && distanceBuf != 0) {
+            ret = distanceBuf;
+        }
+        distanceBuf = d;
+        return ret * 10 / 6 / 58;
+    }
 
     /**
     * Reads the number of times the rain gauge has filled and emptied
