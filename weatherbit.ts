@@ -135,7 +135,7 @@ namespace weatherbit {
     /**
      * get mic analog value.
      */
-    //% blockId="robotbit_mic" block="Volume"
+    //% blockId="weatherbit_mic" block="Volume"
     //% weight=5
     export function getMicValue(): number {
         let value = 0;
@@ -149,9 +149,9 @@ namespace weatherbit {
      * @param index Servo Channel; eg: Servo1
      * @param degree [0-180] degree of servo; eg: 0, 90, 180
     */
-    //% blockId=robotbit_servo block="Servo|%index|degree %degree"
+    //% blockId=weatherbit_servo block="Servo|%index|degree %degree"
     //% weight=22
-    //% blockGap=50
+    //% blockGap=8
     //% degree.min=0 degree.max=180
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
     export function Servo(index: Servos, degree: number): void {
@@ -171,7 +171,7 @@ namespace weatherbit {
         }
     }
 
-    //% blockId=robotbit_motor_speed block="Motor|%index|runSpeed %speed"
+    //% blockId=weatherbit_motor_speed block="Motor|%index|runSpeed %speed"
     //% weight=22
     //% speed.min=-255 speed.max=255
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
@@ -208,22 +208,22 @@ namespace weatherbit {
         }
     }
 
-    //% blockId=robotbit_stop block="Motor Stop|%index|"
+    //% blockId=weatherbit_stop block="Motor Stop|%index|"
     //% weight=22
     export function MotorStop(index: Motors): void {
         MotorRunSpeed(index, 0);
     }
 
-    //% blockId=robotbit_stop_all block="Motor Stop All"
+    //% blockId=weatherbit_stop_all block="Motor Stop All"
     //% weight=22
-    //% blockGap=50
+    //% blockGap=8
     export function MotorStopAll(): void {
         for (let idx = 1; idx <= 2; idx++) {
             MotorRunSpeed(idx, 0);
         }
     }
 
-    //% blockId=robotbit_ultrasonic block="Ultrasonic|pin %pin"
+    //% blockId=weatherbit_ultrasonic block="Ultrasonic|pin %pin"
     //% weight=5
     export function Ultrasonic(pin: DigitalPin): number {
 
